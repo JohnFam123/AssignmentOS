@@ -100,6 +100,8 @@ int vmap_page_range(struct pcb_t *caller, // process call
    *      in page table caller->mm->pgd[]
    */
 
+  //hahaha
+
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
    enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
