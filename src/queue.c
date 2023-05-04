@@ -9,7 +9,11 @@ int empty(struct queue_t * q) {
 
 void enqueue(struct queue_t * q, struct pcb_t * proc) {
         /* TODO: put a new process to queue [q] */
+<<<<<<< HEAD
         // and what
+=======
+		//fuck OS
+>>>>>>> 8656f511b5dcf9ac2439046cfb24f06f10fb7523
 	//pthread_mutex_lock(&q->lock);
 	//if (empty(q))  // if queue is empty, just put to queue
 	//{
