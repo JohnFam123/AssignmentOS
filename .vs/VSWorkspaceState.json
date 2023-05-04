@@ -1,11 +1,16 @@
 {
   "ExpandedNodes": [
     "",
+<<<<<<< HEAD
     "\\include",
     "\\input",
     "\\output",
     "\\src"
   ],
   "SelectedNode": "\\include\\mem.h",
+=======
+    "\\src"
+  ],
+>>>>>>> 53a7564cd777dafbdcf9aea78b2ab6ae03203464
   "PreviewInSolutionExplorer": false
 }
