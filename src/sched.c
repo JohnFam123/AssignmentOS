@@ -27,8 +27,11 @@ void init_scheduler(void) {
 #ifdef MLQ_SCHED
     int i ;
 
-	for (i = 0; i < MAX_PRIO; i ++)
+	for (i = 0; i < MAX_PRIO; i++)
+	{
 		mlq_ready_queue[i].size = 0;
+		mlq_ready_queue[i].count = 0;
+	}
 #endif
 	ready_queue.size = 0;
 	run_queue.size = 0;
@@ -43,11 +46,27 @@ void init_scheduler(void) {
  *  State representation   prio = 0 .. MAX_PRIO, curr_slot = 0..(MAX_PRIO - prio)
  */
 struct pcb_t * get_mlq_proc(void) {
+	pthread_mutex_lock(&queue_lock);
 	struct pcb_t * proc = NULL;
 	/*TODO: get a process from PRIORITY [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 * */
-	return proc;	
+	if (mlq_ready_queue[MAX_PRIO - 1].count != 0)  // if run all the queues, then come back and set the slots back too
+	{
+		for (int i = 0; i < MAX_PRIO; i++)
+			mlq_ready_queue[i].count = 0;
+	}
+	for (int i = 0; i < MAX_PRIO; i++)
+	{
+		if ((mlq_ready_queue[i].size > 0) && (mlq_ready_queue[i].count < (MAX_PRIO - i)))
+		{
+			proc = dequeue(&mlq_ready_queue[i]);
+			mlq_ready_queue[i].count++;
+		}
+	}
+	
+	pthread_mutex_unlock(&queue_lock);
+	return proc;
 }
 
 void put_mlq_proc(struct pcb_t * proc) {
