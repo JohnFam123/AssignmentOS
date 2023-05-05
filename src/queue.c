@@ -10,29 +10,6 @@ int empty(struct queue_t * q) {
 void enqueue(struct queue_t * q, struct pcb_t * proc) {
         /* TODO: put a new process to queue [q] */
 	//pthread_mutex_lock(&q->lock);
-	//if (empty(q))  // if queue is empty, just put to queue
-	//{
-	//	q->proc[0] = proc;
-	//	q->size++;
-	//}
-	//else // if queue is not empty, add to the queue with appropriate position due to priority itself
-	//{
-	//	for (int i = q->size - 1 ; i >= 0; i--)
-	//	{
-	//		if (proc->priority >= q->proc[i]->priority)  // find the position to add
-	//		{
-	//			for (int j = q->size-1; j >= i ; j--)
-	//			{
-	//				q->proc[j] = q->proc[j + 1];         // move the rest queue by 1 position on the right
-	//			}
-	//			q->proc[i] = proc;                       // add process to proper position
-	//			q->size++;
-	//			//pthread_mutex_unlock(&q->lock);
-	//			return;
-	//		}
-	//	}
-	//}
-	//pthread_mutex_unlock(&q->lock);
 	if (empty(q))  // if queue is empty, just put to queue
 	{
 		q->proc[0] = proc;
@@ -40,11 +17,11 @@ void enqueue(struct queue_t * q, struct pcb_t * proc) {
 	}
 	else // if queue is not empty, add to the queue with appropriate position due to priority itself
 	{
-		for (int i = 0; i < q->size; i++)
+		for (int i = q->size - 1 ; i >= 0; i--)
 		{
 			if (proc->priority >= q->proc[i]->priority)  // find the position to add
 			{
-				for (int j = q->size - 1; j >= i; j--)
+				for (int j = q->size-1; j >= i ; j--)
 				{
 					q->proc[j] = q->proc[j + 1];         // move the rest queue by 1 position on the right
 				}
@@ -55,6 +32,29 @@ void enqueue(struct queue_t * q, struct pcb_t * proc) {
 			}
 		}
 	}
+	//pthread_mutex_unlock(&q->lock);
+	// if (empty(q))  // if queue is empty, just put to queue
+	// {
+	// 	q->proc[0] = proc;
+	// 	q->size++;
+	// }
+	// else // if queue is not empty, add to the queue with appropriate position due to priority itself
+	// {
+	// 	for (int i = 0; i < q->size; i++)
+	// 	{
+	// 		if (proc->priority >= q->proc[i]->priority)  // find the position to add
+	// 		{
+	// 			for (int j = q->size - 1; j >= i; j--)
+	// 			{
+	// 				q->proc[j] = q->proc[j + 1];         // move the rest queue by 1 position on the right
+	// 			}
+	// 			q->proc[i] = proc;                       // add process to proper position
+	// 			q->size++;
+	// 			//pthread_mutex_unlock(&q->lock);
+	// 			return;
+	// 		}
+	// 	}
+	// }
 }
 
 struct pcb_t * dequeue(struct queue_t * q) {
