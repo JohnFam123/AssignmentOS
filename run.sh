@@ -1,3 +1,3 @@
 make clean
 make all
-./os sched_0
+./os os_0_mlq_paging

@@ -87,7 +87,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
     caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
 
     *alloc_addr = rgnode.rg_start;
-
+    
     return 0;
   }
 
@@ -104,12 +104,18 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   /* TODO INCREASE THE LIMIT
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
-  inc_vma_limit(caller, vmaid, inc_sz);
+  if (inc_vma_limit(caller, vmaid, inc_sz) < 0){
+    //printf ("Cannot increase limit\n");
+  }
+  else {
+    //printf ("Increase limit success\n");
+  }
 
   /*Successful increase limit */
   caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
   caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
-
+  
+  cur_vma->sbrk = old_sbrk + size;
   *alloc_addr = old_sbrk;
 
   return 0;
@@ -128,7 +134,9 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
 
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
 
+  rgnode = cur_vma->vm_mm->symrgtbl[rgid];
   /* TODO: Manage the collect freed region to freerg_list */
 
   /*enlist the obsoleted memory region */
@@ -147,7 +155,17 @@ int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index)
   int addr;
 
   /* By default using vmaid = 0 */
-  return __alloc(proc, 0, reg_index, size, &addr);
+  if (__alloc(proc, 0, reg_index, size, &addr) == -1){
+    printf("Cannot allocate memory\n");
+    return -1;
+  }
+  else {
+#ifdef MMDBG
+    printf("Allocate addr %d, size =%u,\n", addr, size);
+#endif
+    proc->regs[reg_index] = addr;
+    return 0;
+  }
 }
 
 /*pgfree - PAGING-based free a region memory
@@ -278,7 +296,7 @@ int __read(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE *data)
 }
 
 
-/*pgwrite - PAGING-based read a region memory */
+/*pgread - PAGING-based read a region memory */
 int pgread(
 		struct pcb_t * proc, // Process executing the instruction
 		uint32_t source, // Index of source register
@@ -385,7 +403,7 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
   newrg = malloc(sizeof(struct vm_rg_struct));
 
   newrg->rg_start = cur_vma->sbrk;
-  newrg->rg_end = newrg->rg_start + size;
+  newrg->rg_end = newrg->rg_start + alignedsz;
 
   return newrg;
 }
@@ -400,9 +418,15 @@ struct vm_rg_struct* get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
 int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int vmaend)
 {
   //struct vm_area_struct *vma = caller->mm->mmap;
-
-  /* TODO validate the planned memory area is not overlapped */
-
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  if (cur_vma == NULL)
+    return -1;
+  else {
+    if (vmastart < cur_vma->vm_start ) return -1;
+  }
+#ifdef MMDBG
+  printf ("validate_overlap_vm_area: vmastart = %d, vmaend = %d,current vma: vm_start = %d, vm_end = %d\n", vmastart, vmaend, cur_vma->vm_start, cur_vma->vm_end);
+#endif
   return 0;
 }
 
@@ -416,6 +440,9 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 {
   struct vm_rg_struct * newrg = malloc(sizeof(struct vm_rg_struct));
   int inc_amt = PAGING_PAGE_ALIGNSZ(inc_sz);
+#ifdef MMDBG
+  printf ("inc_vma_limit: inc_sz = %d, inc_amt = %d\n", inc_sz, inc_amt);
+#endif
   int incnumpage =  inc_amt / PAGING_PAGESZ;
   struct vm_rg_struct *area = get_vm_area_node_at_brk(caller, vmaid, inc_sz, inc_amt);
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
@@ -424,8 +451,13 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
   /*Validate overlap of obtained region */
   if (validate_overlap_vm_area(caller, vmaid, area->rg_start, area->rg_end) < 0)
+  {
+#ifdef MMDBG
+    printf ("inc_vma_limit: validate_overlap_vm_area failed\n");
+#endif
+    free (newrg);
     return -1; /*Overlap and failed allocation */
-
+  }
   /* The obtained vm area (only) 
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_sz;
