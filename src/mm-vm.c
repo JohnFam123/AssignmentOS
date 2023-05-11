@@ -252,6 +252,7 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
  */
 int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
 {
+  #define PG_SETVAL_DBG
   int pgn = PAGING_PGN(addr);
   int off = PAGING_OFFST(addr);
   int fpn;
@@ -261,6 +262,11 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
     return -1; /* invalid page access */
 
   int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
+
+  //Dump before write
+#ifdef PG_SETVAL_DBG
+  printf("pg_setval: addr=%d, pgn=%d, fpn=%d, phyaddr=%d, value=%d\n", addr, pgn, fpn, phyaddr, value);
+#endif
 
   MEMPHY_write(caller->mram,phyaddr, value);
 
